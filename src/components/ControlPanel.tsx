@@ -1,5 +1,5 @@
 import { EffectMode, EffectSettings } from '../types';
-import { Sliders, Zap, Download, Activity, Eye } from 'lucide-react';
+import { Sliders, Zap, Download, Activity, RotateCcw } from 'lucide-react';
 
 interface ControlPanelProps {
   mode: EffectMode;
@@ -7,6 +7,7 @@ interface ControlPanelProps {
   settings: EffectSettings;
   updateSettings: (mode: keyof EffectSettings, update: any) => void;
   onExport: () => void;
+  onReset: () => void;
   isRecording: boolean;
   onToggleRecording: () => void;
 }
@@ -17,6 +18,7 @@ export default function ControlPanel({
   settings, 
   updateSettings, 
   onExport,
+  onReset,
   isRecording,
   onToggleRecording
 }: ControlPanelProps) {
@@ -236,6 +238,14 @@ export default function ControlPanel({
       </div>
 
       <div className="mt-auto pt-6 flex flex-col gap-2">
+        <button 
+          onClick={onReset}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-white/5 hover:bg-white/10 text-green-500/50 hover:text-green-500 border border-green-500/10 hover:border-green-500/30 font-bold uppercase text-[10px] transition-all rounded mb-2"
+        >
+          <RotateCcw size={12} />
+          Wipe_Current_Session
+        </button>
+
         <button 
           onClick={onToggleRecording}
           className={`w-full flex items-center justify-center gap-2 py-3 font-bold uppercase text-xs transition-all rounded ${

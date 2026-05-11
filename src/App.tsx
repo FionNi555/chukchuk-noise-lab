@@ -5,11 +5,14 @@ import Header from './components/Header';
 import UploadArea from './components/UploadArea';
 import CanvasEngine from './components/CanvasEngine';
 import ControlPanel from './components/ControlPanel';
+import Logo from './components/Logo';
 import { EffectMode, EffectSettings, INITIAL_SETTINGS } from './types';
 
 const DEFAULT_VIDEO_URL = "https://assets.mixkit.co/videos/preview/mixkit-abstract-motion-of-white-lines-and-dots-in-a-black-background-44163-large.mp4";
 
 export default function App() {
+  const [booting, setBooting] = useState(true);
+  const [initializing, setInitializing] = useState(true);
   const [media, setMedia] = useState<HTMLImageElement | HTMLVideoElement | null>(null);
   const [mode, setMode] = useState<EffectMode>('ascii');
   const [settings, setSettings] = useState<EffectSettings>(INITIAL_SETTINGS);
@@ -26,9 +29,32 @@ export default function App() {
     video.playsInline = true;
     video.crossOrigin = "anonymous";
     
-    video.oncanplay = () => {
+    let isMounted = true;
+
+    const handleLoadSuccess = () => {
+      if (!isMounted) return;
       video.play().catch(() => {});
       setMedia(video);
+      setInitializing(false);
+    };
+
+    video.oncanplay = handleLoadSuccess;
+    video.onerror = () => {
+      if (!isMounted) return;
+      console.warn("Default video failed to load, proceeding to manual input.");
+      setInitializing(false);
+    };
+
+    // Safety timeout: Ensure the start button appears even if video hangs
+    const timer = setTimeout(() => {
+      if (isMounted) setInitializing(false);
+    }, 4000);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      video.oncanplay = null;
+      video.onerror = null;
     };
   }, []);
 
@@ -84,8 +110,68 @@ export default function App() {
     }
   };
 
+  const resetSession = () => {
+    setMedia(null);
+    setMode('ascii');
+    setSettings(INITIAL_SETTINGS);
+    // Re-initialize with default if needed or just leave blank for "Create New" feel
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-mono text-green-500 overflow-hidden select-none">
+      <AnimatePresence>
+        {booting && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center gap-6"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <Logo size={120} />
+            </motion.div>
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex flex-col items-center gap-4"
+            >
+              <h1 className="text-xl font-bold tracking-[0.5em] uppercase neon-text-glow">
+                Chukchuk Noise Lab
+              </h1>
+              
+              {initializing ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-48 h-1 bg-green-500/10 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ x: '-100%' }}
+                      animate={{ x: '100%' }}
+                      transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                      className="w-full h-full bg-green-500"
+                    />
+                  </div>
+                  <span className="text-[10px] opacity-50 animate-pulse uppercase tracking-widest mt-2">Initializing_Visual_Engines...</span>
+                </div>
+              ) : (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setBooting(false)}
+                  className="px-8 py-3 bg-green-500 text-black font-bold uppercase tracking-[0.2em] text-xs rounded hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+                >
+                  START_SESSION_V3.0
+                </motion.button>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Background Grid Overlay */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-10 bg-[linear-gradient(rgba(0,255,65,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,65,0.1)_1px,transparent_1px)] bg-[size:40px_40px]"></div>
       
@@ -114,6 +200,7 @@ export default function App() {
                 settings={settings} 
                 updateSettings={updateSettings}
                 onExport={handleExport}
+                onReset={resetSession}
                 isRecording={isRecording}
                 onToggleRecording={isRecording ? stopRecording : startRecording}
               />

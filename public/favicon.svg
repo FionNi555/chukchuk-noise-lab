@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="black" />
+  <g fill="#22c55e" font-family="monospace" font-weight="bold" font-size="16" text-anchor="middle">
+    <!-- Row 1 -->
+    <text x="30" y="25">0</text>
+    <text x="40" y="25">0</text>
+    <text x="60" y="25">0</text>
+    <text x="70" y="25">0</text>
+    <!-- Row 2 -->
+    <text x="30" y="40">0</text>
+    <text x="40" y="40">0</text>
+    <text x="50" y="40">0</text>
+    <text x="60" y="40">0</text>
+    <text x="70" y="40">0</text>
+    <!-- Row 3 -->
+    <text x="30" y="55">0</text>
+    <rect x="36" y="46" width="8" height="12" fill="#22c55e" />
+    <text x="40" y="55" fill="black">0</text>
+    <text x="50" y="55">0</text>
+    <rect x="56" y="46" width="8" height="12" fill="#22c55e" />
+    <text x="60" y="55" fill="black">0</text>
+    <text x="70" y="55">0</text>
+    <!-- Row 4 -->
+    <text x="30" y="70">0</text>
+    <text x="40" y="70">0</text>
+    <text x="50" y="70">0</text>
+    <text x="60" y="70">0</text>
+    <text x="70" y="70">0</text>
+    <!-- Row 5 -->
+    <text x="40" y="85">0</text>
+    <text x="50" y="85">0</text>
+    <text x="60" y="85">0</text>
+  </g>
+</svg>
