@@ -1,0 +1,12 @@
+{
+  "name": "Chukchuk Noise Lab",
+  "description": "A creative visual effects playground for transforming images and videos into ASCII, Glitch, and Motion Art.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "image-processing",
+    "video-processing",
+    "real-time-graphics"
+  ]
+}
