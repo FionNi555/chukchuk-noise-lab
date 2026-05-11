@@ -110,13 +110,6 @@ export default function App() {
     }
   };
 
-  const resetSession = () => {
-    setMedia(null);
-    setMode('ascii');
-    setSettings(INITIAL_SETTINGS);
-    // Re-initialize with default if needed or just leave blank for "Create New" feel
-  };
-
   return (
     <div className="min-h-screen flex flex-col font-mono text-green-500 overflow-hidden select-none">
       <AnimatePresence>
@@ -200,7 +193,6 @@ export default function App() {
                 settings={settings} 
                 updateSettings={updateSettings}
                 onExport={handleExport}
-                onReset={resetSession}
                 isRecording={isRecording}
                 onToggleRecording={isRecording ? stopRecording : startRecording}
               />
