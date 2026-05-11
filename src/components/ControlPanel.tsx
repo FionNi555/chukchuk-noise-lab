@@ -1,5 +1,6 @@
 import { EffectMode, EffectSettings } from '../types';
 import { Sliders, Zap, Download, Activity, RotateCcw } from 'lucide-react';
+import { getAsciiText } from '../lib/asciiUtils';
 
 interface ControlPanelProps {
   mode: EffectMode;
@@ -74,8 +75,15 @@ export default function ControlPanel({
               max={1}
               onChange={(v) => updateSettings('ascii', { brightnessOffset: v })}
             />
+            <ParameterSlider 
+              label="Contrast" 
+              value={settings.ascii.contrast} 
+              min={1} 
+              max={5}
+              onChange={(v) => updateSettings('ascii', { contrast: v })}
+            />
             <div className="grid grid-cols-2 gap-1 mt-2">
-              {['standard', 'kana', 'emoji', 'binary'].map((cs) => (
+              {['standard', 'kana', 'emoji', 'binary', 'custom'].map((cs) => (
                 <button
                   key={cs}
                   onClick={() => updateSettings('ascii', { charset: cs })}
@@ -87,18 +95,71 @@ export default function ControlPanel({
                 </button>
               ))}
             </div>
-            <div className="flex gap-2 mt-2">
-              {['green', 'white', 'rgb'].map((c) => (
+
+            {settings.ascii.charset === 'custom' && (
+              <div className="mt-2 space-y-1">
+                <span className="text-[8px] uppercase opacity-50">Custom_Charset</span>
+                <input 
+                  type="text"
+                  value={settings.ascii.customCharset}
+                  onChange={(e) => updateSettings('ascii', { customCharset: e.target.value })}
+                  className="w-full bg-black/50 border border-green-500/30 text-green-500 text-[10px] px-2 py-1 focus:outline-none focus:border-green-500"
+                />
+              </div>
+            )}
+
+            <div className="grid grid-cols-3 gap-1 mt-2">
+              {['green', 'white', 'rgb', 'amber', 'cyan'].map((c) => (
                 <button
                   key={c}
                   onClick={() => updateSettings('ascii', { colorMode: c })}
-                  className={`flex-1 py-1 text-[8px] uppercase border ${
+                  className={`py-1 text-[8px] uppercase border ${
                     settings.ascii.colorMode === c ? 'bg-green-500/20 border-green-500' : 'border-green-500/10'
                   }`}
                 >
                   {c}
                 </button>
               ))}
+            </div>
+
+            <button 
+              onClick={() => updateSettings('ascii', { invert: !settings.ascii.invert })}
+              className={`w-full py-2 mt-2 text-[9px] uppercase border font-bold ${
+                settings.ascii.invert ? 'bg-green-500 text-black border-green-500' : 'border-green-500/10 text-green-500/70'
+              }`}
+            >
+              Invert_Colors: {settings.ascii.invert ? 'YES' : 'NO'}
+            </button>
+
+            <div className="grid grid-cols-2 gap-1 mt-2">
+              <button 
+                onClick={() => {
+                  const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+                  if (!canvas) return;
+                  const text = getAsciiText(canvas, settings.ascii);
+                  navigator.clipboard.writeText(text);
+                  alert("ASCII_DATA_COPIED");
+                }}
+                className="py-2 text-[8px] uppercase bg-green-500/10 border border-green-500/30 text-green-500 hover:bg-green-500/20 font-bold"
+              >
+                Copy_Txt
+              </button>
+              <button 
+                onClick={() => {
+                  const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+                  if (!canvas) return;
+                  const text = getAsciiText(canvas, settings.ascii);
+                  const blob = new Blob([text], { type: 'text/plain' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `ascii-kit-${Date.now()}.txt`;
+                  link.click();
+                }}
+                className="py-2 text-[8px] uppercase bg-green-500/10 border border-green-500/30 text-green-500 hover:bg-green-500/20 font-bold"
+              >
+                Save_Txt
+              </button>
             </div>
           </>
         )}
@@ -117,12 +178,12 @@ export default function ControlPanel({
               min={0} max={10}
               onChange={(v) => updateSettings('dotMatrix', { spacing: v })}
             />
-            <div className="flex gap-2 mt-2">
-              {['green', 'white', 'rgb'].map((c) => (
+            <div className="grid grid-cols-3 gap-1 mt-2">
+              {['green', 'white', 'rgb', 'amber', 'cyan'].map((c) => (
                 <button
                   key={c}
                   onClick={() => updateSettings('dotMatrix', { colorMode: c })}
-                  className={`flex-1 py-1 text-[8px] uppercase border ${
+                  className={`py-1 text-[8px] uppercase border ${
                     settings.dotMatrix.colorMode === c ? 'bg-green-500/20 border-green-500' : 'border-green-500/10'
                   }`}
                 >
@@ -215,11 +276,11 @@ export default function ControlPanel({
         {mode === 'dither' && (
           <>
             <div className="grid grid-cols-2 gap-1 mb-4">
-              {['bayer', 'random'].map((t) => (
+              {['bayer', 'random', 'atkinson', 'floyd-steinberg'].map((t) => (
                 <button
                   key={t}
                   onClick={() => updateSettings('dither', { type: t })}
-                  className={`py-2 text-[10px] uppercase border font-bold ${
+                  className={`py-2 text-[8px] uppercase border font-bold ${
                     settings.dither.type === t ? 'bg-green-500 text-black border-green-500' : 'border-green-500/30'
                   }`}
                 >

@@ -1,3 +1,5 @@
+import { hexToRgb } from '../lib/utils';
+
 export const applyAscii = (
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -6,14 +8,26 @@ export const applyAscii = (
     density: number; 
     fontSize: number; 
     colorMode: string;
-    charset: 'standard' | 'kana' | 'emoji' | 'binary';
+    charset: 'standard' | 'kana' | 'emoji' | 'binary' | 'custom';
+    customCharset: string;
+    invert: boolean;
     brightnessOffset: number;
+    contrast: number;
   }
 ) => {
   const imageData = ctx.getImageData(0, 0, width, height);
   const pixels = imageData.data;
   
-  ctx.fillStyle = '#000';
+  const themes: Record<string, string> = {
+    green: '#0f0',
+    white: '#fff',
+    amber: '#ffb000',
+    cyan: '#00ffff'
+  };
+
+  const themeColor = themes[settings.colorMode] || '#0f0';
+  const bgColor = settings.invert ? themeColor : '#000';
+  ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, width, height);
   
   let chars = '@#S%?*+;:,..';
@@ -23,6 +37,8 @@ export const applyAscii = (
     chars = '😀😁😂🤣😃😄😅😆😉😊😋😎😍😘🥰';
   } else if (settings.charset === 'binary') {
     chars = '01';
+  } else if (settings.charset === 'custom') {
+    chars = settings.customCharset || ' ';
   } else if (settings.density <= 0.5) {
     chars = '█▓▒░ ';
   }
@@ -36,17 +52,28 @@ export const applyAscii = (
       const r = pixels[idx];
       const g = pixels[idx + 1];
       const b = pixels[idx + 2];
-      const brightness = Math.min(255, Math.max(0, ((r + g + b) / 3) + (settings.brightnessOffset * 255)));
+      
+      // Calculate brightness with offset
+      let brightness = ((r + g + b) / 3) + (settings.brightnessOffset * 255);
+      
+      // Apply contrast
+      brightness = ((brightness - 128) * settings.contrast) + 128;
+      brightness = Math.min(255, Math.max(0, brightness));
       
       const charIdx = Math.floor((brightness / 255) * (chars.length - 1));
       const char = chars[charIdx];
       
-      if (settings.colorMode === 'green') {
-        ctx.fillStyle = `rgb(0, ${brightness}, 0)`;
-      } else if (settings.colorMode === 'white') {
-        ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
+      if (settings.invert) {
+        ctx.fillStyle = '#000';
       } else {
-        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        if (settings.colorMode === 'rgb') {
+          ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        } else {
+          // Apply theme color relative to brightness
+          const baseColor = themeColor.startsWith('#') ? hexToRgb(themeColor) : {r: 0, g: 255, b: 0};
+          const factor = brightness / 255;
+          ctx.fillStyle = `rgb(${baseColor.r * factor}, ${baseColor.g * factor}, ${baseColor.b * factor})`;
+        }
       }
       
       ctx.fillText(char ?? '', x, y);

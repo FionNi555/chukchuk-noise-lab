@@ -1,3 +1,5 @@
+import { hexToRgb } from '../lib/utils';
+
 export const applyDotMatrix = (
   ctx: CanvasRenderingContext2D,
   width: number,
@@ -6,7 +8,7 @@ export const applyDotMatrix = (
     size: number; 
     spacing: number; 
     shape: string;
-    colorMode: 'green' | 'white' | 'rgb';
+    colorMode: string;
   }
 ) => {
   const imageData = ctx.getImageData(0, 0, width, height);
@@ -27,12 +29,20 @@ export const applyDotMatrix = (
       
       const dotSize = (brightness / 255) * settings.size;
       
-      if (settings.colorMode === 'green') {
-        ctx.fillStyle = `rgb(0, ${brightness}, 0)`;
-      } else if (settings.colorMode === 'white') {
-        ctx.fillStyle = `rgb(${brightness}, ${brightness}, ${brightness})`;
-      } else {
+      const themes: Record<string, string> = {
+        green: '#0f0',
+        white: '#fff',
+        amber: '#ffb000',
+        cyan: '#00ffff'
+      };
+
+      if (settings.colorMode === 'rgb') {
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+      } else {
+        const themeColor = themes[settings.colorMode] || '#0f0';
+        const baseColor = themeColor.startsWith('#') ? hexToRgb(themeColor) : {r: 0, g: 255, b: 0};
+        const factor = brightness / 255;
+        ctx.fillStyle = `rgb(${baseColor.r * factor}, ${baseColor.g * factor}, ${baseColor.b * factor})`;
       }
       
       ctx.beginPath();

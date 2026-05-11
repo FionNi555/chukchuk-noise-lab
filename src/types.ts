@@ -14,15 +14,18 @@ export interface EffectSettings {
   ascii: {
     density: number;
     fontSize: number;
-    colorMode: 'green' | 'white' | 'rgb';
-    charset: 'standard' | 'kana' | 'emoji' | 'binary';
+    colorMode: 'green' | 'white' | 'rgb' | 'amber' | 'cyan';
+    charset: 'standard' | 'kana' | 'emoji' | 'binary' | 'custom';
+    customCharset: string;
+    invert: boolean;
     brightnessOffset: number;
+    contrast: number;
   };
   dotMatrix: {
     size: number;
     spacing: number;
     shape: 'circle' | 'square';
-    colorMode: 'green' | 'white' | 'rgb';
+    colorMode: 'green' | 'white' | 'rgb' | 'amber' | 'cyan';
   };
   motionBlur: {
     trail: number;
@@ -48,7 +51,7 @@ export interface EffectSettings {
     mix: number;
   };
   dither: {
-    type: 'bayer' | 'random';
+    type: 'bayer' | 'random' | 'atkinson' | 'floyd-steinberg';
     levels: number;
   };
 }
@@ -59,7 +62,10 @@ export const INITIAL_SETTINGS: EffectSettings = {
     fontSize: 10,
     colorMode: 'green',
     charset: 'standard',
+    customCharset: '@#S%?*+;:,..',
+    invert: false,
     brightnessOffset: 0,
+    contrast: 1,
   },
   dotMatrix: {
     size: 4,
