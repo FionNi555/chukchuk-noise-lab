@@ -20,6 +20,7 @@ export interface EffectSettings {
     invert: boolean;
     brightnessOffset: number;
     contrast: number;
+    transparent: boolean;
   };
   dotMatrix: {
     size: number;
@@ -62,10 +63,11 @@ export const INITIAL_SETTINGS: EffectSettings = {
     fontSize: 10,
     colorMode: 'green',
     charset: 'standard',
-    customCharset: '@#S%?*+;:,..',
+    customCharset: ' .:-=+*#%@',
     invert: false,
     brightnessOffset: 0,
     contrast: 1,
+    transparent: true,
   },
   dotMatrix: {
     size: 4,

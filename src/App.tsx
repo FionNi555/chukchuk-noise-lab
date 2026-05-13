@@ -188,6 +188,7 @@ export default function App() {
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80">02_Effect_Lab</span>
               </div>
               <ControlPanel 
+                media={media}
                 mode={mode} 
                 setMode={setMode} 
                 settings={settings} 

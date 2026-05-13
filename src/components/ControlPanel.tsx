@@ -3,6 +3,7 @@ import { Sliders, Zap, Download, Activity } from 'lucide-react';
 import { getAsciiText } from '../lib/asciiUtils';
 
 interface ControlPanelProps {
+  media: HTMLImageElement | HTMLVideoElement | null;
   mode: EffectMode;
   setMode: (mode: EffectMode) => void;
   settings: EffectSettings;
@@ -13,6 +14,7 @@ interface ControlPanelProps {
 }
 
 export default function ControlPanel({ 
+  media,
   mode, 
   setMode, 
   settings, 
@@ -120,21 +122,30 @@ export default function ControlPanel({
               ))}
             </div>
 
-            <button 
-              onClick={() => updateSettings('ascii', { invert: !settings.ascii.invert })}
-              className={`w-full py-2 mt-2 text-[9px] uppercase border font-bold ${
-                settings.ascii.invert ? 'bg-green-500 text-black border-green-500' : 'border-green-500/10 text-green-500/70'
-              }`}
-            >
-              Invert_Colors: {settings.ascii.invert ? 'YES' : 'NO'}
-            </button>
+            <div className="grid grid-cols-2 gap-1 mt-2">
+              <button 
+                onClick={() => updateSettings('ascii', { invert: !settings.ascii.invert })}
+                className={`w-full py-2 text-[9px] uppercase border font-bold ${
+                  settings.ascii.invert ? 'bg-green-500 text-black border-green-500' : 'border-green-500/10 text-green-500/70'
+                }`}
+              >
+                Invert: {settings.ascii.invert ? 'YES' : 'NO'}
+              </button>
+              <button 
+                onClick={() => updateSettings('ascii', { transparent: !settings.ascii.transparent })}
+                className={`w-full py-2 text-[9px] uppercase border font-bold ${
+                  settings.ascii.transparent ? 'bg-green-500 text-black border-green-500' : 'border-green-500/10 text-green-500/70'
+                }`}
+              >
+                Transparent: {settings.ascii.transparent ? 'YES' : 'NO'}
+              </button>
+            </div>
 
             <div className="grid grid-cols-2 gap-1 mt-2">
               <button 
                 onClick={() => {
-                  const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
-                  if (!canvas) return;
-                  const text = getAsciiText(canvas, settings.ascii);
+                  if (!media) return;
+                  const text = getAsciiText(media, settings.ascii);
                   navigator.clipboard.writeText(text);
                   alert("ASCII_DATA_COPIED");
                 }}
@@ -144,9 +155,8 @@ export default function ControlPanel({
               </button>
               <button 
                 onClick={() => {
-                  const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
-                  if (!canvas) return;
-                  const text = getAsciiText(canvas, settings.ascii);
+                  if (!media) return;
+                  const text = getAsciiText(media, settings.ascii);
                   const blob = new Blob([text], { type: 'text/plain' });
                   const url = URL.createObjectURL(blob);
                   const link = document.createElement('a');
@@ -159,6 +169,20 @@ export default function ControlPanel({
                 Save_Txt
               </button>
             </div>
+            
+            <button 
+              onClick={() => {
+                const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+                if (!canvas) return;
+                const link = document.createElement('a');
+                link.download = `ascii-kit-${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+              }}
+              className="w-full py-2 mt-1 text-[9px] uppercase bg-green-500/20 border border-green-500 text-green-500 hover:bg-green-500/30 transition-all font-bold"
+            >
+              Export_PNG
+            </button>
           </>
         )}
 

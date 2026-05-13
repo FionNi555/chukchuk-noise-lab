@@ -19,6 +19,15 @@ export const applyDotMatrix = (
   
   const step = Math.max(1, settings.size + settings.spacing);
   
+  const themes: Record<string, string> = {
+    green: '#0f0',
+    white: '#fff',
+    amber: '#ffb000',
+    cyan: '#00ffff'
+  };
+  const themeColor = themes[settings.colorMode] || '#0f0';
+  const baseColor = themeColor.startsWith('#') ? hexToRgb(themeColor) : {r: 0, g: 255, b: 0};
+
   for (let y = 0; y < height; y += step) {
     for (let x = 0; x < width; x += step) {
       const idx = (Math.floor(y) * width + Math.floor(x)) * 4;
@@ -29,18 +38,9 @@ export const applyDotMatrix = (
       
       const dotSize = (brightness / 255) * settings.size;
       
-      const themes: Record<string, string> = {
-        green: '#0f0',
-        white: '#fff',
-        amber: '#ffb000',
-        cyan: '#00ffff'
-      };
-
       if (settings.colorMode === 'rgb') {
         ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
       } else {
-        const themeColor = themes[settings.colorMode] || '#0f0';
-        const baseColor = themeColor.startsWith('#') ? hexToRgb(themeColor) : {r: 0, g: 255, b: 0};
         const factor = brightness / 255;
         ctx.fillStyle = `rgb(${baseColor.r * factor}, ${baseColor.g * factor}, ${baseColor.b * factor})`;
       }

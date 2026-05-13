@@ -1,40 +1,72 @@
 export const getAsciiText = (
-  canvas: HTMLCanvasElement,
+  source: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement,
   settings: { 
     fontSize: number; 
     charset: string;
     customCharset: string;
     brightnessOffset: number;
+    contrast?: number;
   }
 ) => {
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return '';
+  const tempCanvas = document.createElement('canvas');
+  const tempCtx = tempCanvas.getContext('2d', { willReadFrequently: true });
+  if (!tempCtx) return '';
   
-  const { width, height } = canvas;
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const pixels = imageData.data;
+  let width = 0;
+  let height = 0;
   
-  let chars = '@#S%?*+;:,..';
-  if (settings.charset === 'kana') {
-    chars = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん';
-  } else if (settings.charset === 'emoji') {
-    chars = '😀😁😂🤣😃😄😅😆😉😊😋😎😍😘🥰';
-  } else if (settings.charset === 'binary') {
-    chars = '01';
-  } else if (settings.charset === 'custom') {
-    chars = settings.customCharset || ' ';
+  if (source instanceof HTMLVideoElement) {
+    width = source.videoWidth;
+    height = source.videoHeight;
+  } else if (source instanceof HTMLImageElement) {
+    width = source.naturalWidth;
+    height = source.naturalHeight;
+  } else {
+    width = source.width;
+    height = source.height;
   }
 
-  const step = Math.max(4, Math.floor(settings.fontSize * 0.8));
-  let output = '';
+  if (width === 0 || height === 0) return '';
+
+  // Resize for processing speed and better text mapping
+  const scale = Math.min(1, 400 / Math.max(width, height));
+  tempCanvas.width = width * scale;
+  tempCanvas.height = height * scale;
   
-  for (let y = 0; y < height; y += step) {
-    for (let x = 0; x < width; x += step) {
-      const idx = (y * width + x) * 4;
+  tempCtx.drawImage(source, 0, 0, tempCanvas.width, tempCanvas.height);
+  const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+  const pixels = imageData.data;
+  
+  let chars = ' .:-=+*#%@';
+  if (settings.charset === 'kana') {
+    chars = ' .·:;+*?%S#@';
+  } else if (settings.charset === 'emoji') {
+    chars = ' ✨🌟⭐💫';
+  } else if (settings.charset === 'binary') {
+    chars = ' 1';
+  } else if (settings.charset === 'custom') {
+    chars = ' ' + settings.customCharset;
+  }
+
+  // Calculate sampling step based on char density
+  const charWidth = 1;
+  const charHeight = 2; // Aspect ratio adjustment for terminal/monospace
+  const stepX = 4;
+  const stepY = stepX * charHeight;
+  
+  let output = '';
+  const contrast = settings.contrast ?? 1;
+
+  for (let y = 0; y < tempCanvas.height; y += stepY) {
+    for (let x = 0; x < tempCanvas.width; x += stepX) {
+      const idx = (Math.floor(y) * tempCanvas.width + Math.floor(x)) * 4;
       const r = pixels[idx];
       const g = pixels[idx + 1];
       const b = pixels[idx + 2];
-      const brightness = Math.min(255, Math.max(0, ((r + g + b) / 3) + (settings.brightnessOffset * 255)));
+      
+      let brightness = ((r + g + b) / 3) + (settings.brightnessOffset * 255);
+      brightness = ((brightness - 128) * contrast) + 128;
+      brightness = Math.min(255, Math.max(0, brightness));
       
       const charIdx = Math.floor((brightness / 255) * (chars.length - 1));
       const char = chars[charIdx];

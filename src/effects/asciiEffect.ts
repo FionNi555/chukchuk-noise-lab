@@ -13,6 +13,7 @@ export const applyAscii = (
     invert: boolean;
     brightnessOffset: number;
     contrast: number;
+    transparent: boolean;
   }
 ) => {
   const imageData = ctx.getImageData(0, 0, width, height);
@@ -26,21 +27,28 @@ export const applyAscii = (
   };
 
   const themeColor = themes[settings.colorMode] || '#0f0';
-  const bgColor = settings.invert ? themeColor : '#000';
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, width, height);
+  const baseColor = themeColor.startsWith('#') ? hexToRgb(themeColor) : {r: 0, g: 255, b: 0};
+
+  if (!settings.transparent) {
+    const bgColor = settings.invert ? themeColor : '#000';
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, width, height);
+  } else {
+    // Clear canvas for transparency
+    ctx.clearRect(0, 0, width, height);
+  }
   
-  let chars = '@#S%?*+;:,..';
+  let chars = ' .:-=+*#%@';
   if (settings.charset === 'kana') {
-    chars = 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん';
+    chars = ' .·:;+*?%S#@'; // Use standard for now as base
   } else if (settings.charset === 'emoji') {
-    chars = '😀😁😂🤣😃😄😅😆😉😊😋😎😍😘🥰';
+    chars = ' ✨🌟⭐💫✨🌟⭐💫✨🌟⭐💫'; // Better emoji ramp
   } else if (settings.charset === 'binary') {
-    chars = '01';
+    chars = ' 1';
   } else if (settings.charset === 'custom') {
-    chars = settings.customCharset || ' ';
+    chars = ' ' + settings.customCharset;
   } else if (settings.density <= 0.5) {
-    chars = '█▓▒░ ';
+    chars = ' ░▒▓█';
   }
 
   const step = Math.max(4, Math.floor(settings.fontSize * 0.8));
@@ -70,7 +78,6 @@ export const applyAscii = (
           ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
         } else {
           // Apply theme color relative to brightness
-          const baseColor = themeColor.startsWith('#') ? hexToRgb(themeColor) : {r: 0, g: 255, b: 0};
           const factor = brightness / 255;
           ctx.fillStyle = `rgb(${baseColor.r * factor}, ${baseColor.g * factor}, ${baseColor.b * factor})`;
         }
