@@ -23,7 +23,13 @@ export default function ControlPanel({
   isRecording,
   onToggleRecording
 }: ControlPanelProps) {
-  const modes: EffectMode[] = ['original', 'ascii', 'dot-matrix', 'motion-blur', 'glitch', 'crt', 'pixelate', 'rgb-split', 'edge-detection', 'dither'];
+  const modes: EffectMode[] = ['original', 'ascii', 'dot-matrix', 'motion-blur', 'glitch', 'crt', 'pixelate', 'rgb-split', 'edge-detection', 'dither', 'orbit', 'spiral', 'scatter', 'lego', 'surveillance'];
+
+  const effectDescriptions: Record<string, string> = {
+    'motion-blur': 'Multiple blur modes (linear, radial, zoom, wave) for creating motion blur effects on images and videos.',
+    'surveillance': 'Video art effects implemented based on blob tracking algorithm, with many rich customization options.',
+    'ascii': 'Convert images into ASCII art with customizable character sets, fonts, and visual parameters for retro-style text representations.',
+  };
 
   return (
     <div className="flex flex-col gap-4 p-6 terminal-panel rounded-lg neon-shadow h-full overflow-y-auto">
@@ -43,10 +49,16 @@ export default function ControlPanel({
                 : 'border-green-500/30 text-green-500/70 hover:border-green-500'
             }`}
           >
-            {m.replace('-', '_')}
+            {m === 'pixelate' ? 'PIXEL' : m === 'surveillance' ? 'CCTV TRACK' : m === 'motion-blur' ? 'BLUR SUITE' : m.replace('-', '_')}
           </button>
         ))}
       </div>
+
+      {effectDescriptions[mode] && (
+        <div className="mb-4 p-3 bg-green-500/5 border border-green-500/20 text-[10px] text-green-500/80 leading-relaxed italic">
+          {effectDescriptions[mode]}
+        </div>
+      )}
 
       <div className="flex items-center gap-2 mb-2 mt-4">
         <Sliders size={14} className="text-green-500" />
@@ -55,103 +67,180 @@ export default function ControlPanel({
 
       <div className="space-y-6">
         {mode === 'ascii' && (
-          <>
-            <ParameterSlider 
-              label="Density" 
-              value={settings.ascii.density} 
-              onChange={(v) => updateSettings('ascii', { density: v })}
-            />
-            <ParameterSlider 
-              label="Font_Size" 
-              value={settings.ascii.fontSize} 
-              min={4} 
-              max={32}
-              onChange={(v) => updateSettings('ascii', { fontSize: v })}
-            />
-            <ParameterSlider 
-              label="Brightness_Offset" 
-              value={settings.ascii.brightnessOffset} 
-              min={-1} 
-              max={1}
-              onChange={(v) => updateSettings('ascii', { brightnessOffset: v })}
-            />
-            <ParameterSlider 
-              label="Contrast" 
-              value={settings.ascii.contrast} 
-              min={1} 
-              max={5}
-              onChange={(v) => updateSettings('ascii', { contrast: v })}
-            />
-            <div className="grid grid-cols-2 gap-1 mt-2">
-              {['standard', 'kana', 'emoji', 'binary', 'custom'].map((cs) => (
-                <button
-                  key={cs}
-                  onClick={() => updateSettings('ascii', { charset: cs })}
-                  className={`py-1 text-[8px] uppercase border ${
-                    settings.ascii.charset === cs ? 'bg-green-500/20 border-green-500' : 'border-green-500/10'
-                  }`}
-                >
-                  {cs}
-                </button>
-              ))}
+          <div className="space-y-4">
+            <div className="space-y-3">
+              <ParameterSlider 
+                label="Resolution" 
+                value={settings.ascii.fontSize} 
+                min={4} max={30}
+                onChange={(v) => updateSettings('ascii', { fontSize: v })}
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <ParameterSlider 
+                  label="Line_Height" 
+                  value={settings.ascii.lineHeight} 
+                  min={0.5} max={2.0}
+                  onChange={(v) => updateSettings('ascii', { lineHeight: v })}
+                />
+                <ParameterSlider 
+                  label="Kerning" 
+                  value={settings.ascii.charSpacing} 
+                  min={-10} max={10}
+                  onChange={(v) => updateSettings('ascii', { charSpacing: v })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[8px] uppercase opacity-50 block mb-1">Font_Face</span>
+              <div className="grid grid-cols-5 gap-1">
+                {['monospace', 'serif', 'system-ui', 'retro', 'pixel'].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => updateSettings('ascii', { fontFamily: f })}
+                    className={`py-1.5 text-[8px] uppercase border transition-all ${
+                      settings.ascii.fontFamily === f 
+                        ? 'bg-green-500 text-black border-green-500 font-bold' 
+                        : 'border-green-500/20 text-green-500/60 hover:border-green-500/50'
+                    }`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2 border-t border-green-500/10">
+              <ParameterSlider 
+                label="Brightness" 
+                value={settings.ascii.brightnessOffset} 
+                min={-0.5} max={0.5}
+                onChange={(v) => updateSettings('ascii', { brightnessOffset: v })}
+              />
+              <ParameterSlider 
+                label="Contrast" 
+                value={settings.ascii.contrast} 
+                min={0.5} max={3.0}
+                onChange={(v) => updateSettings('ascii', { contrast: v })}
+              />
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-[8px] uppercase opacity-50 block mb-1">Character_Set</span>
+              <div className="grid grid-cols-4 gap-1">
+                {['standard', 'blocks', 'braille', 'kana', 'emoji', 'binary', 'custom'].map((cs) => (
+                  <button
+                    key={cs}
+                    onClick={() => updateSettings('ascii', { charset: cs })}
+                    className={`py-1.5 text-[8px] uppercase border transition-all ${
+                      settings.ascii.charset === cs 
+                        ? 'bg-green-500 text-black border-green-500 font-bold' 
+                        : 'border-green-500/20 text-green-500/60 hover:border-green-500/50'
+                    }`}
+                  >
+                    {cs}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {settings.ascii.charset === 'custom' && (
-              <div className="mt-2 space-y-1">
-                <span className="text-[8px] uppercase opacity-50">Custom_Charset</span>
+              <div className="space-y-1">
+                <span className="text-[8px] uppercase opacity-50">Custom_Chars</span>
                 <input 
                   type="text"
                   value={settings.ascii.customCharset}
                   onChange={(e) => updateSettings('ascii', { customCharset: e.target.value })}
-                  className="w-full bg-black/50 border border-green-500/30 text-green-500 text-[10px] px-2 py-1 focus:outline-none focus:border-green-500"
+                  className="w-full bg-black/50 border border-green-500/30 text-green-500 text-[10px] px-2 py-1.5 focus:outline-none focus:border-green-500"
                 />
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-1 mt-2">
-              {['green', 'white', 'rgb', 'amber', 'cyan'].map((c) => (
-                <button
-                  key={c}
-                  onClick={() => updateSettings('ascii', { colorMode: c })}
-                  className={`py-1 text-[8px] uppercase border ${
-                    settings.ascii.colorMode === c ? 'bg-green-500/20 border-green-500' : 'border-green-500/10'
-                  }`}
-                >
-                  {c}
-                </button>
-              ))}
+            <div className="space-y-1">
+              <span className="text-[8px] uppercase opacity-50 block mb-1">Color_Profile</span>
+              <div className="grid grid-cols-5 gap-1">
+                {['green', 'white', 'rgb', 'amber', 'cyan'].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => updateSettings('ascii', { colorMode: c })}
+                    className={`py-1.5 text-[8px] uppercase border transition-all ${
+                      settings.ascii.colorMode === c 
+                        ? 'bg-green-500 text-black border-green-500 font-bold' 
+                        : 'border-green-500/20 text-green-500/60 hover:border-green-500/50'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-1 mt-2">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-green-500/10">
               <button 
                 onClick={() => updateSettings('ascii', { invert: !settings.ascii.invert })}
-                className={`w-full py-2 text-[9px] uppercase border font-bold ${
+                className={`py-2 text-[9px] uppercase border font-bold transition-all ${
                   settings.ascii.invert ? 'bg-green-500 text-black border-green-500' : 'border-green-500/10 text-green-500/70'
                 }`}
               >
-                Invert: {settings.ascii.invert ? 'YES' : 'NO'}
+                Invert
               </button>
               <button 
                 onClick={() => updateSettings('ascii', { transparent: !settings.ascii.transparent })}
-                className={`w-full py-2 text-[9px] uppercase border font-bold ${
+                className={`py-2 text-[9px] uppercase border font-bold transition-all ${
                   settings.ascii.transparent ? 'bg-green-500 text-black border-green-500' : 'border-green-500/10 text-green-500/70'
                 }`}
               >
-                Transparent: {settings.ascii.transparent ? 'YES' : 'NO'}
+                Alpha
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-1 mt-2">
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {['none', 'clear', 'blur'].map((m) => (
+                  <button 
+                    key={m}
+                    onClick={() => updateSettings('ascii', { overlay: m })}
+                    className={`py-2 text-[9px] uppercase border font-bold transition-all ${
+                      settings.ascii.overlay === m ? 'bg-green-500 text-black border-green-500' : 'border-green-500/10 text-green-500/70'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+
+              {settings.ascii.overlay !== 'none' && (
+                <ParameterSlider 
+                  label="Overlay_Strength" 
+                  value={settings.ascii.overlayIntensity} 
+                  min={0} max={1}
+                  onChange={(v) => updateSettings('ascii', { overlayIntensity: v })}
+                />
+              )}
+            </div>
+              
+            {!settings.ascii.transparent && (
+                <div className="flex items-center gap-2 px-2 py-1.5 bg-black/30 border border-green-500/20">
+                  <span className="text-[8px] uppercase text-green-500/50">BG_COLOR</span>
+                  <input 
+                    type="color"
+                    value={settings.ascii.backgroundColor}
+                    onChange={(e) => updateSettings('ascii', { backgroundColor: e.target.value })}
+                    className="w-full h-4 bg-transparent border-none cursor-pointer"
+                  />
+                </div>
+              )}
+
+            <div className="grid grid-cols-3 gap-1">
               <button 
                 onClick={() => {
                   if (!media) return;
                   const text = getAsciiText(media, settings.ascii);
                   navigator.clipboard.writeText(text);
-                  alert("ASCII_DATA_COPIED");
                 }}
-                className="py-2 text-[8px] uppercase bg-green-500/10 border border-green-500/30 text-green-500 hover:bg-green-500/20 font-bold"
+                className="py-2 text-[8px] uppercase bg-green-500/5 border border-green-500/20 text-green-500 hover:bg-green-500/10 font-bold"
               >
-                Copy_Txt
+                Copy_TXT
               </button>
               <button 
                 onClick={() => {
@@ -164,26 +253,25 @@ export default function ControlPanel({
                   link.download = `ascii-kit-${Date.now()}.txt`;
                   link.click();
                 }}
-                className="py-2 text-[8px] uppercase bg-green-500/10 border border-green-500/30 text-green-500 hover:bg-green-500/20 font-bold"
+                className="py-2 text-[8px] uppercase bg-green-500/5 border border-green-500/20 text-green-500 hover:bg-green-500/10 font-bold"
               >
-                Save_Txt
+                Save_TXT
+              </button>
+              <button 
+                onClick={() => {
+                  const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
+                  if (!canvas) return;
+                  const link = document.createElement('a');
+                  link.download = `ascii-kit-${Date.now()}.png`;
+                  link.href = canvas.toDataURL('image/png');
+                  link.click();
+                }}
+                className="py-2 text-[8px] uppercase bg-green-500 text-black border border-green-500 hover:bg-green-400 font-bold"
+              >
+                PNG
               </button>
             </div>
-            
-            <button 
-              onClick={() => {
-                const canvas = document.getElementById('main-canvas') as HTMLCanvasElement;
-                if (!canvas) return;
-                const link = document.createElement('a');
-                link.download = `ascii-kit-${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-              }}
-              className="w-full py-2 mt-1 text-[9px] uppercase bg-green-500/20 border border-green-500 text-green-500 hover:bg-green-500/30 transition-all font-bold"
-            >
-              Export_PNG
-            </button>
-          </>
+          </div>
         )}
 
         {mode === 'dot-matrix' && (
@@ -219,10 +307,29 @@ export default function ControlPanel({
         {mode === 'motion-blur' && (
           <>
             <ParameterSlider 
-              label="Trail_Len" 
+              label="Persistence" 
               value={settings.motionBlur.trail} 
               onChange={(v) => updateSettings('motionBlur', { trail: v })}
             />
+            <ParameterSlider 
+              label="Feedback_Intensity" 
+              value={settings.motionBlur.intensity} 
+              min={0} max={10}
+              onChange={(v) => updateSettings('motionBlur', { intensity: v })}
+            />
+            <div className="grid grid-cols-2 gap-1 mt-2">
+              {['linear', 'radial', 'zoom', 'wave'].map((bm) => (
+                <button
+                  key={bm}
+                  onClick={() => updateSettings('motionBlur', { mode: bm })}
+                  className={`py-2 text-[8px] uppercase border font-bold ${
+                    settings.motionBlur.mode === bm ? 'bg-green-500 text-black border-green-500' : 'border-green-500/10 text-green-500/70'
+                  }`}
+                >
+                  {bm}
+                </button>
+              ))}
+            </div>
           </>
         )}
 
@@ -318,6 +425,118 @@ export default function ControlPanel({
             />
           </>
         )}
+
+        {mode === 'orbit' && (
+          <>
+            <ParameterSlider 
+              label="Particle_Count" 
+              value={settings.orbit.count} 
+              min={100} max={10000}
+              onChange={(v) => updateSettings('orbit', { count: v })}
+            />
+            <ParameterSlider 
+              label="Radius" 
+              value={settings.orbit.radius} 
+              min={0.1} max={2.0}
+              onChange={(v) => updateSettings('orbit', { radius: v })}
+            />
+            <ParameterSlider 
+              label="Orbit_Speed" 
+              value={settings.orbit.speed} 
+              min={0} max={5}
+              onChange={(v) => updateSettings('orbit', { speed: v })}
+            />
+            <ParameterColorModes effect="orbit" colorMode={settings.orbit.colorMode} updateSettings={updateSettings} />
+          </>
+        )}
+
+        {mode === 'spiral' && (
+          <>
+            <ParameterSlider 
+              label="Revolutions" 
+              value={settings.spiral.revolutions} 
+              min={1} max={50}
+              onChange={(v) => updateSettings('spiral', { revolutions: v })}
+            />
+            <ParameterSlider 
+              label="Speed" 
+              value={settings.spiral.speed} 
+              min={0} max={5}
+              onChange={(v) => updateSettings('spiral', { speed: v })}
+            />
+            <ParameterColorModes effect="spiral" colorMode={settings.spiral.colorMode} updateSettings={updateSettings} />
+          </>
+        )}
+
+        {mode === 'scatter' && (
+          <>
+            <ParameterSlider 
+              label="Intensity" 
+              value={settings.scatter.amount} 
+              min={0} max={2}
+              onChange={(v) => updateSettings('scatter', { amount: v })}
+            />
+            <ParameterSlider 
+              label="Dot_Size" 
+              value={settings.scatter.size} 
+              min={1} max={10}
+              onChange={(v) => updateSettings('scatter', { size: v })}
+            />
+            <ParameterColorModes effect="scatter" colorMode={settings.scatter.colorMode} updateSettings={updateSettings} />
+          </>
+        )}
+
+        {mode === 'lego' && (
+          <>
+            <ParameterSlider 
+              label="Brick_Size" 
+              value={settings.lego.size} 
+              min={4} max={40}
+              onChange={(v) => updateSettings('lego', { size: v })}
+            />
+            <ParameterColorModes effect="lego" colorMode={settings.lego.colorMode} updateSettings={updateSettings} />
+          </>
+        )}
+
+        {mode === 'surveillance' && (
+          <>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-green-500 font-bold tracking-[0.2em]">SHOW_CALLOUTS</span>
+                <button 
+                  onClick={() => updateSettings('surveillance', { showCallouts: !settings.surveillance.showCallouts })}
+                  className={`w-10 h-4 border ${settings.surveillance.showCallouts ? 'bg-green-500/50 border-green-500' : 'border-green-500/20'} rounded-none transition-colors`}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-green-500 font-bold tracking-[0.2em]">BLOB_TRACKING</span>
+                <button 
+                  onClick={() => updateSettings('surveillance', { showTracking: !settings.surveillance.showTracking })}
+                  className={`w-10 h-4 border ${settings.surveillance.showTracking ? 'bg-green-500/50 border-green-500' : 'border-green-500/20'} rounded-none transition-colors`}
+                />
+              </div>
+            </div>
+            <ParameterSlider 
+              label="Track_Precision" 
+              value={settings.surveillance.trackingPrecision} 
+              min={0.1} max={1.0}
+              onChange={(v) => updateSettings('surveillance', { trackingPrecision: v })}
+            />
+            <div className="grid grid-cols-5 gap-1 mt-2">
+              {['red', 'green', 'white', 'rgb', 'amber'].map((c) => (
+                <button
+                  key={c}
+                  onClick={() => updateSettings('surveillance', { colorMode: c })}
+                  className={`py-1 text-[8px] uppercase border ${
+                    settings.surveillance.colorMode === c ? 'bg-green-500/20 border-green-500' : 'border-green-500/10'
+                  }`}
+                >
+                  {c}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="mt-auto pt-6 flex flex-col gap-2">
@@ -368,11 +587,37 @@ function ParameterSlider({
         type="range" 
         min={min} 
         max={max} 
-        step={max > 1 ? 1 : 0.01}
+        step={max > 5 ? 1 : 0.01}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
         className="w-full h-1 bg-green-500/10 rounded-lg appearance-none cursor-pointer accent-green-500"
       />
+    </div>
+  );
+}
+
+function ParameterColorModes({ 
+  effect, 
+  colorMode, 
+  updateSettings 
+}: { 
+  effect: keyof EffectSettings; 
+  colorMode: string; 
+  updateSettings: any 
+}) {
+  return (
+    <div className="grid grid-cols-3 gap-1 mt-2">
+      {['green', 'white', 'rgb', 'amber', 'cyan'].map((c) => (
+        <button
+          key={c}
+          onClick={() => updateSettings(effect, { colorMode: c })}
+          className={`py-1 text-[8px] uppercase border ${
+            colorMode === c ? 'bg-green-500/20 border-green-500' : 'border-green-500/10'
+          }`}
+        >
+          {c}
+        </button>
+      ))}
     </div>
   );
 }

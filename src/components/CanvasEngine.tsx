@@ -9,6 +9,11 @@ import { applyPixelate } from '../effects/pixelateEffect';
 import { applyRgbSplit } from '../effects/rgbSplitEffect';
 import { applyEdgeDetection } from '../effects/edgeDetectionEffect';
 import { applyDither } from '../effects/ditherEffect';
+import { applyOrbitEffect } from '../effects/orbitEffect';
+import { applySpiralEffect } from '../effects/spiralEffect';
+import { applyScatterEffect } from '../effects/scatterEffect';
+import { applyLegoEffect } from '../effects/legoEffect';
+import { applySurveillance } from '../effects/surveillanceEffect';
 
 interface CanvasEngineProps {
   media: HTMLImageElement | HTMLVideoElement | null;
@@ -21,6 +26,13 @@ export default function CanvasEngine({ media, mode, settings }: CanvasEngineProp
   const tempCanvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number>(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const settingsRef = useRef(settings);
+  const modeRef = useRef(mode);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+    modeRef.current = mode;
+  }, [settings, mode]);
 
   useEffect(() => {
     if (media instanceof HTMLVideoElement) {
@@ -35,9 +47,14 @@ export default function CanvasEngine({ media, mode, settings }: CanvasEngineProp
     const ctx = canvas?.getContext('2d', { willReadFrequently: true });
     
     if (!canvas || !ctx || !media) return;
+ 
+    let isStale = false;
 
     const processFrame = () => {
-      if (!canvas || !ctx || !media) return;
+      if (isStale || !canvas || !ctx || !media) return;
+
+      const currentMode = modeRef.current;
+      const currentSettings = settingsRef.current;
 
       // Set dimensions
       let sourceWidth = 0;
@@ -58,9 +75,25 @@ export default function CanvasEngine({ media, mode, settings }: CanvasEngineProp
         return;
       }
 
-      if (canvas.width !== sourceWidth) {
-        canvas.width = sourceWidth;
-        canvas.height = sourceHeight;
+      // Cap resolution for performance
+      const MAX_RESOLUTION = 1200;
+      let targetWidth = sourceWidth;
+      let targetHeight = sourceHeight;
+
+      if (targetWidth > MAX_RESOLUTION || targetHeight > MAX_RESOLUTION) {
+        const ratio = targetWidth / targetHeight;
+        if (ratio > 1) {
+          targetWidth = MAX_RESOLUTION;
+          targetHeight = Math.floor(MAX_RESOLUTION / ratio);
+        } else {
+          targetHeight = MAX_RESOLUTION;
+          targetWidth = Math.floor(MAX_RESOLUTION * ratio);
+        }
+      }
+
+      if (canvas.width !== targetWidth) {
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
       }
 
       const { width, height } = canvas;
@@ -70,55 +103,70 @@ export default function CanvasEngine({ media, mode, settings }: CanvasEngineProp
 
       // Apply effects
       try {
-        if (mode === 'ascii') {
-          applyAscii(ctx, width, height, settings.ascii);
-        } else if (mode === 'dot-matrix') {
-          applyDotMatrix(ctx, width, height, settings.dotMatrix);
-        } else if (mode === 'motion-blur') {
+        if (currentMode === 'ascii') {
+          applyAscii(ctx, width, height, currentSettings.ascii, media);
+        } else if (currentMode === 'dot-matrix') {
+          applyDotMatrix(ctx, width, height, currentSettings.dotMatrix);
+        } else if (currentMode === 'motion-blur') {
           if (!tempCanvasRef.current) {
             tempCanvasRef.current = document.createElement('canvas');
           }
-          if (tempCanvasRef.current.width !== width) {
+          if (tempCanvasRef.current.width !== width || tempCanvasRef.current.height !== height) {
             tempCanvasRef.current.width = width;
             tempCanvasRef.current.height = height;
           }
-          applyMotionBlur(ctx, width, height, tempCanvasRef.current, settings.motionBlur);
-        } else if (mode === 'glitch') {
-          applyGlitch(ctx, width, height, settings.glitch);
-        } else if (mode === 'crt') {
-          applyCrt(ctx, width, height, settings.crt);
-        } else if (mode === 'pixelate') {
-          applyPixelate(ctx, width, height, settings.pixelate);
-        } else if (mode === 'rgb-split') {
-          applyRgbSplit(ctx, width, height, settings.rgbSplit);
-        } else if (mode === 'edge-detection') {
-          applyEdgeDetection(ctx, width, height, settings.edgeDetection);
-        } else if (mode === 'dither') {
-          applyDither(ctx, width, height, settings.dither);
+          applyMotionBlur(ctx, width, height, tempCanvasRef.current, currentSettings.motionBlur);
+        } else if (currentMode === 'glitch') {
+          applyGlitch(ctx, width, height, currentSettings.glitch);
+        } else if (currentMode === 'crt') {
+          applyCrt(ctx, width, height, currentSettings.crt);
+        } else if (currentMode === 'pixelate') {
+          applyPixelate(ctx, width, height, currentSettings.pixelate);
+        } else if (currentMode === 'rgb-split') {
+          applyRgbSplit(ctx, width, height, currentSettings.rgbSplit);
+        } else if (currentMode === 'edge-detection') {
+          applyEdgeDetection(ctx, width, height, currentSettings.edgeDetection);
+        } else if (currentMode === 'dither') {
+          applyDither(ctx, width, height, currentSettings.dither);
+        } else if (currentMode === 'orbit') {
+          applyOrbitEffect(ctx, width, height, currentSettings.orbit);
+        } else if (currentMode === 'spiral') {
+          applySpiralEffect(ctx, width, height, currentSettings.spiral);
+        } else if (currentMode === 'scatter') {
+          applyScatterEffect(ctx, width, height, currentSettings.scatter);
+        } else if (currentMode === 'lego') {
+          applyLegoEffect(ctx, width, height, currentSettings.lego);
+        } else if (currentMode === 'surveillance') {
+          applySurveillance(ctx, width, height, currentSettings.surveillance);
         }
       } catch (err) {
         console.error("Effect Application Error:", err);
       }
 
-      if (media instanceof HTMLVideoElement && !media.paused) {
+      const isAnimatedMode = ['glitch', 'orbit', 'spiral', 'surveillance', 'motion-blur'].includes(currentMode);
+
+      if ((media instanceof HTMLVideoElement && !media.paused) || isAnimatedMode) {
         requestRef.current = requestAnimationFrame(processFrame);
       }
     };
 
     if (media instanceof HTMLVideoElement) {
        const handlePlay = () => {
+         cancelAnimationFrame(requestRef.current);
          requestRef.current = requestAnimationFrame(processFrame);
        };
        media.addEventListener('play', handlePlay);
-       if (!media.paused) processFrame();
+       processFrame();
        
        return () => {
+         isStale = true;
          cancelAnimationFrame(requestRef.current);
          media.removeEventListener('play', handlePlay);
        };
     } else {
       processFrame();
       return () => {
+        isStale = true;
         cancelAnimationFrame(requestRef.current);
       };
     }

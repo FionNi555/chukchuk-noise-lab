@@ -4,10 +4,9 @@ export const applyGlitch = (
   height: number,
   settings: { amount: number; speed: number }
 ) => {
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const pixels = imageData.data;
+  if (settings.amount <= 0) return;
   
-  const intensity = settings.amount * 50;
+  const intensity = Math.floor(settings.amount * 50);
   
   for (let i = 0; i < intensity; i++) {
     const x = Math.floor(Math.random() * width);
@@ -15,16 +14,17 @@ export const applyGlitch = (
     const w = Math.max(1, Math.floor(Math.random() * width * settings.amount));
     const h = Math.max(1, Math.floor(Math.random() * 10 * settings.amount));
     
-    // Ensure we stay within bounds for getImageData
+    // Ensure we stay within bounds for drawImage
     const actualW = Math.min(w, width - x);
     const actualH = Math.min(h, height - y);
     
     if (actualW <= 0 || actualH <= 0) continue;
 
-    const slice = ctx.getImageData(x, y, actualW, actualH);
     const offset = (Math.random() - 0.5) * 40 * settings.amount;
+    const targetX = Math.min(width - actualW, Math.max(0, x + offset));
     
-    ctx.putImageData(slice, Math.min(width - actualW, Math.max(0, x + offset)), y);
+    // Use drawImage instead of getImageData for massive performance boost
+    ctx.drawImage(ctx.canvas, x, y, actualW, actualH, targetX, y, actualW, actualH);
     
     if (Math.random() > 0.8) {
       ctx.fillStyle = `rgba(0, 255, 65, ${Math.random() * 0.2})`;

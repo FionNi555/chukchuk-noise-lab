@@ -7,17 +7,47 @@ export const applyAscii = (
   settings: { 
     density: number; 
     fontSize: number; 
-    colorMode: string;
-    charset: 'standard' | 'kana' | 'emoji' | 'binary' | 'custom';
+    colorMode: 'green' | 'white' | 'rgb' | 'amber' | 'cyan';
+    charset: 'standard' | 'blocks' | 'braille' | 'kana' | 'emoji' | 'binary' | 'custom';
+    fontFamily: string;
     customCharset: string;
     invert: boolean;
     brightnessOffset: number;
     contrast: number;
     transparent: boolean;
-  }
+    backgroundColor: string;
+    overlay: 'none' | 'clear' | 'blur';
+    overlayIntensity: number;
+    lineHeight: number;
+    charSpacing: number;
+  },
+  media: HTMLImageElement | HTMLVideoElement | null
 ) => {
   const imageData = ctx.getImageData(0, 0, width, height);
   const pixels = imageData.data;
+  
+  if (settings.overlay === 'none') {
+    if (!settings.transparent) {
+      ctx.fillStyle = settings.backgroundColor;
+      ctx.fillRect(0, 0, width, height);
+    } else {
+      ctx.clearRect(0, 0, width, height);
+    }
+  } else if (settings.overlay === 'blur') {
+    ctx.save();
+    // Blur strength based on intensity
+    const blurAmount = settings.overlayIntensity * 20;
+    const brightness = 1 - (settings.overlayIntensity * 0.5);
+    ctx.filter = `blur(${blurAmount}px) brightness(${brightness})`;
+    if (media) ctx.drawImage(media, 0, 0, width, height);
+    ctx.restore();
+  } else if (settings.overlay === 'clear') {
+    ctx.save();
+    // Keep it clear but allow dimming/opacity
+    ctx.globalAlpha = settings.overlayIntensity;
+    if (media) ctx.drawImage(media, 0, 0, width, height);
+    ctx.restore();
+  }
   
   const themes: Record<string, string> = {
     green: '#0f0',
@@ -29,40 +59,47 @@ export const applyAscii = (
   const themeColor = themes[settings.colorMode] || '#0f0';
   const baseColor = themeColor.startsWith('#') ? hexToRgb(themeColor) : {r: 0, g: 255, b: 0};
 
-  if (!settings.transparent) {
-    const bgColor = settings.invert ? themeColor : '#000';
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, width, height);
-  } else {
-    // Clear canvas for transparency
-    ctx.clearRect(0, 0, width, height);
-  }
-  
-  let chars = ' .:-=+*#%@';
-  if (settings.charset === 'kana') {
-    chars = ' .·:;+*?%S#@'; // Use standard for now as base
-  } else if (settings.charset === 'emoji') {
-    chars = ' ✨🌟⭐💫✨🌟⭐💫✨🌟⭐💫'; // Better emoji ramp
-  } else if (settings.charset === 'binary') {
-    chars = ' 1';
-  } else if (settings.charset === 'custom') {
-    chars = ' ' + settings.customCharset;
-  } else if (settings.density <= 0.5) {
-    chars = ' ░▒▓█';
-  }
+  const CHARSETS: Record<string, string> = {
+    standard: ' .:-=+*#%@',
+    blocks: ' ░▒▓█',
+    braille: ' ⠁⠃⠇⠧⠷⠿',
+    kana: ' .·:;+*?%S#@',
+    emoji: ' ✨🌟⭐💫',
+    binary: ' 01',
+    custom: ' ' + settings.customCharset,
+  };
 
-  const step = Math.max(4, Math.floor(settings.fontSize * 0.8));
-  ctx.font = `${settings.fontSize}px monospace`;
+  const fonts: Record<string, string> = {
+    monospace: 'monospace',
+    serif: 'serif',
+    'system-ui': 'system-ui',
+    retro: '"Courier New", Courier, monospace',
+    pixel: '"VT323", monospace'
+  };
+
+  let chars = CHARSETS[settings.charset] || CHARSETS.standard;
+  const fontFace = fonts[settings.fontFamily] || 'monospace';
   
-  for (let y = 0; y < height; y += step) {
-    for (let x = 0; x < width; x += step) {
-      const idx = (y * width + x) * 4;
+  const charWidth = settings.fontSize * 0.6 + settings.charSpacing;
+  const charHeight = settings.fontSize * settings.lineHeight;
+
+  ctx.font = `${settings.fontSize}px ${fontFace}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  
+  for (let y = 0; y < height; y += charHeight) {
+    for (let x = 0; x < width; x += charWidth) {
+      // Sample center pixels for better representation
+      const px = Math.min(width - 1, Math.floor(x));
+      const py = Math.min(height - 1, Math.floor(y));
+      const idx = (py * width + px) * 4;
+      
       const r = pixels[idx];
       const g = pixels[idx + 1];
       const b = pixels[idx + 2];
       
-      // Calculate brightness with offset
-      let brightness = ((r + g + b) / 3) + (settings.brightnessOffset * 255);
+      // Better brightness calculation (luminosity)
+      let brightness = (0.299 * r + 0.587 * g + 0.114 * b) + (settings.brightnessOffset * 255);
       
       // Apply contrast
       brightness = ((brightness - 128) * settings.contrast) + 128;

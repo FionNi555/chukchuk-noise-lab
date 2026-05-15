@@ -12,14 +12,18 @@ export const applyEdgeDetection = (
   const threshold = settings.threshold;
 
   for (let y = 1; y < height - 1; y++) {
+    const row = y * width;
+    const prevRow = (y - 1) * width;
+    const nextRow = (y + 1) * width;
+    
     for (let x = 1; x < width - 1; x++) {
-      const i = (y * width + x) * 4;
+      const i = (row + x) * 4;
 
       // Simple gradient calculation
-      const left = ((y * width + (x - 1)) * 4);
-      const right = ((y * width + (x + 1)) * 4);
-      const top = (((y - 1) * width + x) * 4);
-      const bottom = (((y + 1) * width + x) * 4);
+      const left = (row + (x - 1)) * 4;
+      const right = (row + (x + 1)) * 4;
+      const top = (prevRow + x) * 4;
+      const bottom = (nextRow + x) * 4;
 
       const gx = (data[right] + data[right+1] + data[right+2]) - (data[left] + data[left+1] + data[left+2]);
       const gy = (data[bottom] + data[bottom+1] + data[bottom+2]) - (data[top] + data[top+1] + data[top+2]);

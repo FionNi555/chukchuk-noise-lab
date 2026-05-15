@@ -5,22 +5,25 @@ export const applyPixelate = (
   settings: { size: number }
 ) => {
   const pixelSize = Math.max(1, Math.floor(settings.size));
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const pixels = imageData.data;
+  if (pixelSize <= 1) return;
 
-  ctx.fillStyle = '#000';
-  ctx.fillRect(0, 0, width, height);
+  // Create temporary canvas for scaling
+  const tempCanvas = document.createElement('canvas');
+  const tempCtx = tempCanvas.getContext('2d');
+  if (!tempCtx) return;
 
-  for (let y = 0; y < height; y += pixelSize) {
-    for (let x = 0; x < width; x += pixelSize) {
-      const i = (y * width + x) * 4;
-      const r = pixels[i];
-      const g = pixels[i + 1];
-      const b = pixels[i + 2];
-      const a = pixels[i + 3];
+  const w = Math.ceil(width / pixelSize);
+  const h = Math.ceil(height / pixelSize);
 
-      ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
-      ctx.fillRect(x, y, pixelSize, pixelSize);
-    }
-  }
+  tempCanvas.width = w;
+  tempCanvas.height = h;
+
+  // Draw current canvas content to temp at small scale
+  tempCtx.drawImage(ctx.canvas, 0, 0, width, height, 0, 0, w, h);
+
+  // Draw back to main canvas scaled up
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tempCanvas, 0, 0, w, h, 0, 0, width, height);
+  ctx.restore();
 };

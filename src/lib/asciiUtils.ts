@@ -37,22 +37,22 @@ export const getAsciiText = (
   const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
   const pixels = imageData.data;
   
-  let chars = ' .:-=+*#%@';
-  if (settings.charset === 'kana') {
-    chars = ' .·:;+*?%S#@';
-  } else if (settings.charset === 'emoji') {
-    chars = ' ✨🌟⭐💫';
-  } else if (settings.charset === 'binary') {
-    chars = ' 1';
-  } else if (settings.charset === 'custom') {
-    chars = ' ' + settings.customCharset;
-  }
+  const CHARSETS: Record<string, string> = {
+    standard: ' .:-=+*#%@',
+    blocks: ' ░▒▓█',
+    braille: ' ⠁⠃⠇⠧⠷⠿',
+    kana: ' .·:;+*?%S#@',
+    emoji: ' ✨🌟⭐💫',
+    binary: ' 01',
+    custom: ' ' + (settings.customCharset || ''),
+  };
+
+  const chars = CHARSETS[settings.charset] || CHARSETS.standard;
 
   // Calculate sampling step based on char density
-  const charWidth = 1;
-  const charHeight = 2; // Aspect ratio adjustment for terminal/monospace
+  const charAspectRatio = 0.5; // Monospace usually 1:2
   const stepX = 4;
-  const stepY = stepX * charHeight;
+  const stepY = stepX / charAspectRatio;
   
   let output = '';
   const contrast = settings.contrast ?? 1;
@@ -64,7 +64,8 @@ export const getAsciiText = (
       const g = pixels[idx + 1];
       const b = pixels[idx + 2];
       
-      let brightness = ((r + g + b) / 3) + (settings.brightnessOffset * 255);
+      // Calculate brightness with luminosity formula
+      let brightness = (0.299 * r + 0.587 * g + 0.114 * b) + (settings.brightnessOffset * 255);
       brightness = ((brightness - 128) * contrast) + 128;
       brightness = Math.min(255, Math.max(0, brightness));
       
